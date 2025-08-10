@@ -1,0 +1,52 @@
+import os
+import openai
+from config import OPENAI_API_KEY, DEFAULT_MODEL
+
+openai.api_key = OPENAI_API_KEY
+
+def analyze_question(question_text: str) -> str:
+    prompt = f"Break down the following data analysis task into precise step-by-step instructions:\n\n{question_text}"
+    resp = openai.ChatCompletion.create(
+        model=DEFAULT_MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return resp.choices[0].message["content"]
+
+def generate_code(steps: str, question_file: str, data_files: list) -> str:
+    file_list = "\n".join(data_files)
+    prompt = f"""
+Follow these analysis steps:
+
+{steps}
+
+Write Python code using Pandas, Matplotlib, NumPy, and statistics to:
+1. Read input files
+2. Perform required analysis
+3. Print a JSON array or object as the final output (JSON string only, no extra text)
+
+Questions file: {question_file}
+Data files: {file_list}
+"""
+    resp = openai.ChatCompletion.create(
+        model=DEFAULT_MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return resp.choices[0].message["content"]
+
+def review_and_debug_code(code: str, error_message: str) -> str:
+    prompt = f"""
+The following Python code failed:
+
+CODE:
+{code}
+
+ERROR:
+{error_message}
+
+Correct the issue. Keep same output format (pure JSON print).
+"""
+    resp = openai.ChatCompletion.create(
+        model=DEFAULT_MODEL,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return resp.choices[0].message["content"]
